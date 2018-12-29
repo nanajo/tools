@@ -1,0 +1,83 @@
+#!/bin/bash
+
+#The ec2start command to start EC2 instance using tags.
+#User must gives tag name and value. The tag value is allowed to put multiple parameters.
+
+#Invariables
+EXIT_NORMAL=0
+EXIT_FAILURE=1
+
+#Print usage. (-h option)
+function usage () {
+	echo "\
+Usage:
+-t Tag Name (Required)
+-v Tag Value (Required)
+-r AWS Region (Option)
+-p Profile name for awscli (Option)
+-h Print this message
+If you don't defined region and profile, this command use default region defined in ~/.aws/config \
+"
+	exit $1
+}
+
+#Do exit with usage and EXIT_FAILURE when no options.
+if [ $# -eq 0 ];
+then
+	usage $EXIT_FAILURE
+fi
+
+#Parse options
+#-t Tag Name
+#-v Tag Value
+#-r Region
+#-p Profile
+#-h print usage
+while getopts t:v:r:p:h OPT
+do
+	case $OPT in
+		t)
+			TAG=$OPTARG
+			;;
+		v)
+			VALUES=$OPTARG
+			;;
+		r)
+			REGION=$OPTARG
+			;;
+		p)
+			PROFILE=$OPTARG
+			;;
+		h)
+			usage $EXIT_NORMAL
+			;;
+	esac
+done
+
+#Check options are required
+if [ -v $TAG ] || [ -v $VALUES ];
+then
+	usage $EXIT_FAILURE
+fi
+
+#Check options are optional
+if [ ! -v $REGION ];
+then
+	OPTION="$OPTION --region $REGION"
+fi
+if [ ! -v $PROFILE ];
+then
+	OPTION="$OPTION --profile $PROFILE"
+fi
+
+#Get Instance IDs
+for TAG_VALUE in `echo $VALUES | sed -e "s/,/ /g"`
+do
+	InstanceID=`aws ec2 describe-instances --output text $OPTION --query "Reservations[].Instances[?Tags[?Key == '$TAG'].Value|[0] == '$TAG_VALUE'][].InstanceId"`
+	IDList="$IDList $InstanceID"
+done
+
+#StartInstances
+aws ec2 start-instances --instance-ids $IDList
+
+exit $EXIT_NORMAL

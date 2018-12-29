@@ -1,0 +1,75 @@
+#!/bin/bash
+
+#Invariables
+EXIT_NORMAL=0
+EXIT_FAILURE=1
+
+#Print usage
+function usage () {
+	echo "\
+Usage:
+-s Source file name (Required)
+-m Select mode (enc|dec) (Required)
+-d Destination file name (Optional)
+-h Print this message\
+"
+	exit $EXIT_FAILURE
+}
+
+#Do exit with usage and EXIT_FAILURE when no options.
+if [ $# -eq 0 ];
+then
+	usage $EXIT_FAILURE
+fi
+
+#Options
+#-s Source file name
+#-d Destination file name
+#-h Print usage
+while getopts s:m:d:h OPT
+do
+	case ${OPT} in
+		s)
+			SRC_FILE=${OPTARG}
+			;;
+		m)
+			MODE=${OPTARG}
+			;;
+		d)
+			DST_FILE=${OPTARG}
+			;;
+		h)
+			usage
+			;;
+	esac
+done
+
+#Check required options
+[[ -z ${SRC_FILE} ]] && echo "Missing -s option" && usage
+[[ -z ${MODE} ]] && echo "Missing -m option" && usage
+
+#Set Encryption method
+#Currently AES256 only
+[[ -z ${CRYPT_METHOD} ]] && CRYPT_METHOD=aes256
+
+
+#Set default destination file name
+[[ -z ${DST_FILE} ]] && [[ ${MODE} = "enc" ]] && DST_FILE=${SRC_FILE}.${CRYPT_METHOD}
+[[ -z ${DST_FILE} ]] && [[ ${MODE} = "dec" ]] && DST_FILE=${SRC_FILE}.decrypted
+
+#Encrypt
+if [ ${MODE} = "enc" ];
+then
+	openssl aes-256-cbc -e -in ${SRC_FILE} -out ${DST_FILE} -iter 256
+	exit $?
+fi
+
+#Decrypt
+if [ ${MODE} = "dec" ];
+then
+	openssl aes-256-cbc -d -in ${SRC_FILE} -out ${DST_FILE} -iter 256
+	exit $?
+fi
+
+#Incompatible mode string
+echo "Cannot understand -m option"; usage
