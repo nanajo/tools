@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# ============================
+#  Parse options
+# ============================
+dest_dir=""
+
+usage() {
+    echo "Usage: $0 -d <backup_destination_directory>"
+    exit 1
+}
+
+# Parse options
+while getopts "d:" opt; do
+    case "$opt" in
+        d)
+            dest_dir="$OPTARG"
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+# Check if -d was provided
+if [ -z "$dest_dir" ]; then
+    echo "Error: Backup destination directory must be specified with -d option." >&2
+    usage
+fi
+
+# ============================
+#  Backup logic
+# ============================
+timestamp=$(date +%s)
+
+mkdir -p "${dest_dir}/${timestamp}/"{vm,net}
+
+# Backup VM definitions
+for vm in $(virsh list --all --name); do
+    virsh dumpxml "${vm}" > "${dest_dir}/${timestamp}/vm/${vm}.xml"
+done
+
+# Backup Network definitions (excluding default)
+for net in $(virsh net-list --all --name | grep -v default); do
+    virsh net-dumpxml "${net}" > "${dest_dir}/${timestamp}/net/${net}.xml"
+done
