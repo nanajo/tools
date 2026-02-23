@@ -19,6 +19,11 @@ if type snap > /dev/null 2>&1; then
     sudo snap refresh
 fi
 
+# For flatpak
+if type snap > /dev/null 2>&1; then
+    flatpak update
+fi
+
 # For cargo-upodate
 if cargo install-update --help > /dev/null 2>&1; then
     cargo install-update -a
