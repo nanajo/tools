@@ -20,7 +20,7 @@ if type snap > /dev/null 2>&1; then
 fi
 
 # For flatpak
-if type snap > /dev/null 2>&1; then
+if type flatpak > /dev/null 2>&1; then
     flatpak update
 fi
 
