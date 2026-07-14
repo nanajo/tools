@@ -6,12 +6,10 @@ if type apt > /dev/null 2>&1; then
 fi
 
 # For dnf or yum
-if type yum > /dev/null 2>&1; then
-    sudo yum update
-fi
-
 if type dnf > /dev/null 2>&1; then
     sudo dnf update
+elif type yum > /dev/null 2>&1; then
+    sudo yum update
 fi
 
 # For snap
@@ -31,5 +29,13 @@ fi
 
 # For rust
 if type rustup > /dev/null 2>&1; then
-	rustup update
+    rustup update
+fi
+
+# For npm
+if type ncu > /dev/null 2>&1; then
+    NCU_UPDATE=$(ncu -g | grep "npm -g install")
+    if [ ! -z "$NCU_UPDATE" ]; then
+        sudo $NCU_UPDATE
+    fi
 fi
